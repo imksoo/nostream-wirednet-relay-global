@@ -142,8 +142,8 @@ export class EventRepository implements IEventRepository {
               isEmpty,
               () => andWhereRaw('1 = 0', bd),
               forEach((criterion: string) => void orWhereRaw(
-                'event_tags.tag_name = ? AND event_tags.tag_value = ?',
-                [filterName[1], criterion],
+                'event_tags.tag_name = ? AND md5(event_tags.tag_value) = md5(?) AND sha256(event_tags.tag_value::bytea) = sha256(?::bytea)',
+                [filterName[1], criterion, criterion],
                 bd,
               )),
             )(criteria)
