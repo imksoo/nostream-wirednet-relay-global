@@ -12,8 +12,8 @@ services:
       DB_USER: nostr_ts_relay
       DB_PASSWORD: nostr_ts_relay
       DB_NAME: nostr_ts_relay
-      DB_MIN_POOL_SIZE: 320
-      DB_MAX_POOL_SIZE: 1280
+      DB_MIN_POOL_SIZE: 16
+      DB_MAX_POOL_SIZE: 64
       DB_ACQUIRE_CONNECTION_TIMEOUT: 60000
       # Read Replica
       READ_REPLICAS: 2
@@ -72,13 +72,13 @@ services:
         condition: service_healthy
       nostream-migrate:
         condition: service_completed_successfully
-    restart: on-failure
+    restart: always
     networks:
       relay:
   nostream-db:
     image: postgres:15
     container_name: nostream-db
-    shm_size: 4gb
+    shm_size: 20gb
     environment:
       POSTGRES_DB: nostr_ts_relay
       POSTGRES_USER: nostr_ts_relay
@@ -134,7 +134,7 @@ services:
       relay:
         ipv4_address: 10.10.10.254
   pgadmin:
-    image: dpage/pgadmin4:8
+    image: dpage/pgadmin4
     volumes:
       - pgadmin:/var/lib/pgadmin
     environment:
