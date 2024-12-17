@@ -66,48 +66,13 @@ export class EventRepository implements IEventRepository {
     const queries = filters.map((currentFilter) => {
       const builder = this.readReplicaDbClient<DBEvent>('events')
 
-      forEachObjIndexed((tableFields: string[], filterName: string | number) => {
-        builder.andWhere((bd) => {
-          cond([
-            [isEmpty, () => void bd.whereRaw('1 = 0')],
-            [
-              complement(isNil),
-              pipe(
-                groupByLengthSpec,
-                evolve({
-                  exact: (pubkeys: string[]) =>
-                    tableFields.forEach((tableField) =>
-                      bd.orWhereIn(tableField, pubkeys.map(toBuffer))
-                    ),
-                  even: forEach((prefix: string) =>
-                    tableFields.forEach((tableField) =>
-                      bd.orWhereRaw(
-                        `substring("${tableField}" from 1 for ?) = ?`,
-                        [prefix.length >> 1, toBuffer(prefix)]
-                      )
-                    )
-                  ),
-                  odd: forEach((prefix: string) =>
-                    tableFields.forEach((tableField) =>
-                      bd.orWhereRaw(
-                        `substring("${tableField}" from 1 for ?) BETWEEN ? AND ?`,
-                        [
-                          (prefix.length >> 1) + 1,
-                          `\\x${prefix}0`,
-                          `\\x${prefix}f`,
-                        ],
-                      )
-                    )
-                  ),
-                } as any),
-              ),
-            ],
-          ])(currentFilter[filterName] as string[])
-        })
-      })({
-        authors: ['event_pubkey'],
-        ids: ['event_id'],
-      })
+      if (Array.isArray(currentFilter.authors)) {
+        builder.whereIn('event_pubkey', currentFilter.authors.map(toBuffer))
+      }
+
+      if (Array.isArray(currentFilter.ids)) {
+        builder.whereIn('event_id', currentFilter.ids.map(toBuffer))
+      }
 
       if (Array.isArray(currentFilter.kinds)) {
         builder.whereIn('event_kind', currentFilter.kinds)
